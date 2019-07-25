@@ -39,21 +39,33 @@ app.set("view engine", "handlebars");
 var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
 
 mongoose.connect(MONGODB_URI);
-app.get("/", function (req, res) {
 
-    res.render("index")
+app.get("/", function (req, res) {
+    db.Article.find({})
+        .then(function (data) {
+            res.render("index", { articles: data })
+        })
+        .catch(function (err) {
+            res.render("index")
+        })
 });
+
 app.get("/scrape", function (req, res) {
+    var imgs = [];
     // First, we grab the body of the html with axios
     axios.get("https://www.sbnation.com/nfl-news").then(function (response) {
         // Then, we load that into cheerio and save it to $ for a shorthand selector
         var $ = cheerio.load(response.data);
 
+        $(".c-dynamic-image").each(function (j, element) {
+
+            imgs.push($(this).attr("src"));
+        })
         // Now, we grab every h2 within an article tag, and do the following:
         $(".c-entry-box--compact__body h2").each(function (i, element) {
             // Save an empty result object
             var result = {};
-
+            // console.log('imgs ', imgs);
             // Add the text and href of every link, and save them as properties of the result object
             result.title = $(this)
                 .children("a")
@@ -61,14 +73,12 @@ app.get("/scrape", function (req, res) {
             result.link = $(this)
                 .children("a")
                 .attr("href");
-
+            result.img = imgs[i];
             // Create a new Article using the `result` object built from scraping
             db.Article.create(result)
                 .then(function (dbArticle) {
                     // View the added result in the console
                     // console.log(dbArticle);
-                    console.log("created")
-                    // res.json(dbArtic)
                 })
                 .catch(function (err) {
                     // If an error occurred, log it
@@ -84,7 +94,8 @@ app.get("/scrape", function (req, res) {
 // Route for getting all Articles from the db
 app.get("/articles", function (req, res) {
     // Grab every document in the Articles collection
-    db.Article.find({})
+    db.Article.find({ saved: false })
+        // { runValidators: true, context: 'query' }
         .then(function (dbArticle) {
             // If we were able to successfully find Articles, send them back to the client
             res.json(dbArticle);
@@ -131,6 +142,32 @@ app.post("/articles/:id", function (req, res) {
         });
 });
 
+app.get("/saved", function (req, res) {
+    db.Article.find({ saved: true }).then(function (articles) {
+        res.json(articles)
+    })
+        .catch(function (err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
+});
+
+app.get("/articles/clear", function (req, res) {
+    db.Article.drop();
+})
+
+app.put("/articles/:id", function (req, res) {
+    console.log("Updating article")
+    db.Article.findByIdAndUpdate(req.body._id, { saved: req.body.saved })
+        .then(function (data) {
+            console.log(data)
+            res.render("index")
+        })
+        .catch(function (err) {
+            console.log(err)
+            res.json(err)
+        })
+})
 // Start the server
 app.listen(PORT, function () {
     console.log("App running on port " + PORT + "!");

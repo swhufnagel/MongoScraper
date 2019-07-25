@@ -15,21 +15,25 @@ $(document).ready(function () {
             // If we have headlines, render them to the page
             if (data && data.length) {
                 renderArticles(data);
+                console.log('data ', data);
             } else {
                 // Otherwise render a message explaining we have no articles
                 renderEmpty();
             }
         });
     }
-
+    initPage();
+    var articleCards = [];
     function renderArticles(articles) {
+        console.log('rendering');
         // This function handles appending HTML containing our article data to the page
         // We are passed an array of JSON containing all available articles in our database
-        var articleCards = [];
         // We pass each article JSON object to the createCard function which returns a bootstrap
         // card with our article data inside
-        console.log('articles', articles);
+
+        // var existing = articleCards.includes(articles[i].title);
         for (var i = 0; i < articles.length; i++) {
+
             articleCards.push(createCard(articles[i]));
         }
         // Once we have all of the HTML for the articles stored in our articleCards array,
@@ -41,7 +45,9 @@ $(document).ready(function () {
         // This function takes in a single JSON object for an article/headline
         // It constructs a jQuery element containing all of the formatted HTML for the
         // article card
+        console.log(article);
         var card = $("<div class='card'>");
+        var cardImg = $("<img class='cardImg'>").attr("src", article.img);
         var cardHeader = $("<div class='card-header'>").append(
             $("<h3>").append(
                 $("<a class='article-link' target='_blank' rel='noopener noreferrer'>")
@@ -50,10 +56,7 @@ $(document).ready(function () {
                 $("<a class='btn btn-success save'>Save Article</a>")
             )
         );
-
-        var cardBody = $("<div class='card-body'>").text(article.summary);
-
-        card.append(cardHeader, cardBody);
+        card.append(cardImg, cardHeader);
         // We attach the article's id to the jQuery element
         // We will use this when trying to figure out which article the user wants to save
         card.data("_id", article._id);
@@ -96,16 +99,17 @@ $(document).ready(function () {
         $(this)
             .parents(".card")
             .remove();
-
         articleToSave.saved = true;
+        console.log('saving this article', articleToSave);
         // Using a patch method to be semantic since this is an update to an existing record in our collection
         $.ajax({
             method: "PUT",
-            url: "/articles" + articleToSave._id,
+            url: "/articles/" + articleToSave._id,
             data: articleToSave
         }).then(function (data) {
             // If the data was saved successfully
             if (data.saved) {
+                console.log("article returned", data);
                 // Run the initPage function again. This will reload the entire list of articles
                 initPage();
             }
@@ -113,6 +117,7 @@ $(document).ready(function () {
     }
 
     function handleArticleScrape() {
+        console.log('scrape function running');
         // This function handles the user clicking any "scrape new article" buttons
         $.get("/scrape").then(function (data) {
             console.log("scrape ", data);
@@ -125,8 +130,10 @@ $(document).ready(function () {
     }
 
     function handleArticleClear() {
-        $.get("api/clear").then(function () {
+        $.get("articles/clear").then(function () {
+            articleCards = [];
             articleContainer.empty();
+
             initPage();
         });
     }
