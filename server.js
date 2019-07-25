@@ -36,7 +36,7 @@ app.engine(
     })
 );
 app.set("view engine", "handlebars");
-var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoArticles";
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoArticle";
 
 mongoose.connect(MONGODB_URI);
 
@@ -105,7 +105,17 @@ app.get("/articles", function (req, res) {
             res.json(err);
         });
 });
+app.get("/articles/saved", function (req, res) {
+    db.Article.find({ saved: true })
+        .then(function (saved) {
+            res.json(saved);
 
+        })
+        .catch(function (err) {
+            res.json(err);
+
+        })
+})
 // Route for grabbing a specific Article by id, populate it with it's note
 app.get("/articles/:id", function (req, res) {
     // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
@@ -153,16 +163,34 @@ app.get("/saved", function (req, res) {
         });
 });
 
-app.get("/articles/clear", function (req, res) {
-    db.Article.find({ saved: true }).remove(function (data) {
+app.get("/articles/saved/clear", function (req, res) {
+    db.Article.deleteMany({ saved: true }, function (data) {
         console.log("deleting ", data);
     });
-    db.Article.drop();
+
+})
+app.put("/articles/clear", function (req, res) {
+    db.Article.deleteMany({ saved: false }, function (data) {
+        console.log("deleting ", data);
+    });
+
 })
 
 app.put("/articles/:id", function (req, res) {
     console.log("Updating article")
-    db.Article.findByIdAndUpdate(req.body._id, { saved: req.body.saved })
+    db.Article.findByIdAndUpdate({ _id: req.body._id }, { saved: req.body.saved })
+        .then(function (data) {
+            console.log(data)
+            res.render("index")
+        })
+        .catch(function (err) {
+            console.log(err)
+            res.json(err)
+        })
+})
+app.put("/article/:id", function (req, res) {
+    console.log("Deleting article")
+    db.Article.findByIdAndDelete(req.body._id, { saved: req.body.saved })
         .then(function (data) {
             console.log(data)
             res.render("index")

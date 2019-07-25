@@ -1,3 +1,4 @@
+
 /* global bootbox */
 $(document).ready(function () {
     // Setting a reference to the article-container div where all the dynamic content will go
@@ -11,6 +12,7 @@ $(document).ready(function () {
     function initPage() {
         // Run an AJAX request for any unsaved headlines
         $.get("/articles").then(function (data) {
+            console.log("initializing");
             articleContainer.empty();
             // If we have headlines, render them to the page
             if (data && data.length) {
@@ -33,7 +35,6 @@ $(document).ready(function () {
 
         // var existing = articleCards.includes(articles[i].title);
         for (var i = 0; i < articles.length; i++) {
-
             articleCards.push(createCard(articles[i]));
         }
         // Once we have all of the HTML for the articles stored in our articleCards array,
@@ -109,7 +110,7 @@ $(document).ready(function () {
         }).then(function (data) {
             // If the data was saved successfully
             if (data.saved) {
-                console.log("article returned", data);
+                console.log("running");
                 // Run the initPage function again. This will reload the entire list of articles
                 initPage();
             }
@@ -130,11 +131,18 @@ $(document).ready(function () {
     }
 
     function handleArticleClear() {
-        $.get("articles/clear").then(function () {
-            articleCards = [];
-            articleContainer.empty();
-
+        function cb() {
+            // If the data was saved successfully
+            console.log("clearing ");
+            // Run the initPage function again. This will reload the entire list of articles
             initPage();
-        });
+        }
+        $.ajax({
+            url: "/articles/clear",
+            method: 'PUT',
+            success: cb()
+        })
     }
+
+
 });

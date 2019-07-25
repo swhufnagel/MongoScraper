@@ -1,10 +1,13 @@
 $(document).ready(function () {
 
     var articleContainer = $(".article-container");
+    $(document).on("click", ".clear", handleArticleClear);
+    $(document).on("click", ".delete", deleteSingle);
 
     function initPage() {
         // Run an AJAX request for any unsaved headlines
-        $.get("/saved").then(function (data) {
+        $.get("/articles/saved").then(function (data) {
+            console.log("saved ", data);
             articleContainer.empty();
             // If we have headlines, render them to the page
             if (data && data.length) {
@@ -25,7 +28,7 @@ $(document).ready(function () {
 
         // var existing = articleCards.includes(articles[i].title);
         for (var i = 0; i < articles.length; i++) {
-
+            console.log("this card ", articles[i]);
             articleCards.push(createCard(articles[i]));
         }
         // Once we have all of the HTML for the articles stored in our articleCards array,
@@ -44,7 +47,7 @@ $(document).ready(function () {
                 $("<a class='article-link' target='_blank' rel='noopener noreferrer'>")
                     .attr("href", article.link)
                     .text(article.title),
-                $("<a class='btn btn-success save'>Save Article</a>")
+                $("<a class='btn btn-danger delete'>X</a>")
             )
         );
         card.append(cardImg, cardHeader);
@@ -61,15 +64,14 @@ $(document).ready(function () {
         var emptyAlert = $(
             [
                 "<div class='alert alert-warning text-center'>",
-                "<h4>Uh Oh. Looks like we don't have any new articles.</h4>",
+                "<h4>Uh Oh. Looks like we don't have any saved articles.</h4>",
                 "</div>",
                 "<div class='card'>",
                 "<div class='card-header text-center'>",
                 "<h3>What Would You Like To Do?</h3>",
                 "</div>",
                 "<div class='card-body text-center'>",
-                "<h4><a class='scrape-new'>Try Scraping New Articles</a></h4>",
-                "<h4><a href='/saved'>Go to Saved Articles</a></h4>",
+                "<h4><a href='/'>Go to Home</a></h4>",
                 "</div>",
                 "</div>"
             ].join("")
@@ -77,6 +79,41 @@ $(document).ready(function () {
         // Appending this data to the page
         articleContainer.append(emptyAlert);
     }
+    function handleArticleClear() {
 
+        $.ajax({
+            method: "PUT",
+            url: "/saved/"
+        }).then(function (data) {
+            // If the data was saved successfully
 
+            console.log("article clearing", data);
+            // Run the initPage function again. This will reload the entire list of articles
+            initPage();
+
+        });
+    }
+    function deleteSingle() {
+        var articleToDelete = $(this)
+            .parents(".card")
+            .data();
+
+        // Remove card from page
+        $(this)
+            .parents(".card")
+            .remove();
+        console.log('deleting this article', articleToDelete);
+        // Using a patch method to be semantic since this is an update to an existing record in our collection
+        $.ajax({
+            method: "PUT",
+            url: "/article/" + articleToDelete._id,
+            data: articleToDelete
+        }).then(function (data) {
+            // If the data was saved successfully
+            if (data.deleted) {
+                initPage();
+            }
+            // Run the initPage function again. This will reload the entire list of articles
+        });
+    }
 });
