@@ -36,7 +36,7 @@ app.engine(
     })
 );
 app.set("view engine", "handlebars");
-var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoArticles";
 
 mongoose.connect(MONGODB_URI);
 
@@ -144,7 +144,8 @@ app.post("/articles/:id", function (req, res) {
 
 app.get("/saved", function (req, res) {
     db.Article.find({ saved: true }).then(function (articles) {
-        res.json(articles)
+
+        res.render("saved")
     })
         .catch(function (err) {
             // If an error occurred, send it to the client
@@ -153,6 +154,9 @@ app.get("/saved", function (req, res) {
 });
 
 app.get("/articles/clear", function (req, res) {
+    db.Article.find({ saved: true }).remove(function (data) {
+        console.log("deleting ", data);
+    });
     db.Article.drop();
 })
 
