@@ -82,18 +82,17 @@ $(document).ready(function () {
         articleContainer.append(emptyAlert);
     }
     function handleArticleClear() {
-
-        $.ajax({
-            method: "PUT",
-            url: "/saved/"
-        }).then(function (data) {
+        function cb() {
             // If the data was saved successfully
-
-            console.log("article clearing", data);
+            console.log("deleting saved ");
             // Run the initPage function again. This will reload the entire list of articles
             initPage();
-
-        });
+        }
+        $.ajax({
+            url: "/articles/saved/clear",
+            method: 'PUT',
+            success: cb()
+        })
     }
     function deleteSingle() {
         var articleToDelete = $(this)

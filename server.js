@@ -165,7 +165,7 @@ app.get("/saved", function (req, res) {
         });
 });
 
-app.get("/articles/saved/clear", function (req, res) {
+app.put("/articles/saved/clear", function (req, res) {
     db.Article.deleteMany({ saved: true }, function (data) {
         console.log("deleting ", data);
     });
