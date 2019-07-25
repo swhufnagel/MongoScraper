@@ -3,6 +3,8 @@ $(document).ready(function () {
     var articleContainer = $(".article-container");
     $(document).on("click", ".clear", handleArticleClear);
     $(document).on("click", ".delete", deleteSingle);
+    $(document).on("click", ".note", newNote);
+    $(document).on("click", "#saveNote", saveNote);
 
     function initPage() {
         // Run an AJAX request for any unsaved headlines
@@ -28,7 +30,6 @@ $(document).ready(function () {
 
         // var existing = articleCards.includes(articles[i].title);
         for (var i = 0; i < articles.length; i++) {
-            console.log("this card ", articles[i]);
             articleCards.push(createCard(articles[i]));
         }
         // Once we have all of the HTML for the articles stored in our articleCards array,
@@ -47,7 +48,8 @@ $(document).ready(function () {
                 $("<a class='article-link' target='_blank' rel='noopener noreferrer'>")
                     .attr("href", article.link)
                     .text(article.title),
-                $("<a class='btn btn-danger delete'>X</a>")
+                $("<a class='btn btn-danger delete'>X</a>"),
+                $("<a class='btn btn-warning note'>Note</a>"),
             )
         );
         card.append(cardImg, cardHeader);
@@ -115,5 +117,76 @@ $(document).ready(function () {
             }
             // Run the initPage function again. This will reload the entire list of articles
         });
+    }
+
+    function newNote() {
+        // console.log("this:", $(this).attr("data"));
+        // var thisId = $(this).attr("data");
+        var findId = $(this)
+            .parents(".card")
+            .data();
+        var articleCard = $(this)
+            .parents(".card");
+        $.ajax({
+            method: "GET",
+            url: "/articles/" + findId._id
+        })
+            .then(function (data) {
+                console.log("ajax data:", data);
+                var noteHolder = $("<div>");
+                noteHolder.attr("id", "notes");
+                $(noteHolder).append("<h5>" + data.title.substring(0, 72) + '...' + "</h5>");
+                $(noteHolder).append("<input id='titleinput' name='title' placeholder='Comment title' ></input>");
+                $(noteHolder).append("<textarea id='bodyinput' name='body' placeholder='Leave a comment'></textarea>");
+                $(noteHolder).append("<button class='btn-large blue waves-effect right' data-id='" + data._id + "' id='saveNote'>Save Note</button>");
+                $(articleCard).append("<div class='displayNotes' data-id='" + data._id + "'></div>");
+                articleCard.append(noteHolder);
+                renderNotes(findId._id);
+                // If there's a note in the article
+                // if (data.note) {
+                //     $("#titleinput").val(data.note.title);
+                //     $("#bodyinput").val(data.note.body);
+                // }
+
+
+            })
+    }
+
+    function saveNote() {
+
+        var thisId = $(this).attr("data-id");
+        console.log("ThisId:", thisId);
+        noteTitle = $("#titleinput").val();
+        noteBody = $("#bodyinput").val();
+        $.ajax({
+            method: "POST",
+            url: "/articles/" + thisId,
+            data: {
+                title: noteTitle,
+                body: noteBody
+            }
+        })
+            .then(function (data) {
+                console.log("last data:", data);
+            });
+
+        // Remove values entered
+        $("#titleinput").val("");
+        $("#bodyinput").val("");
+        renderNotes(thisId)
+    }
+    function renderNotes(id) {
+        console.log("sending notes to console");
+        $.ajax({
+            method: "GET",
+            url: "/articles/" + id,
+        }).then(function (data) {
+            console.log("notes: ", data.note);
+            var note = $("<div>");
+            note.addClass("note");
+            note.append("<h3>Title: ", data.note.title, "</h3>");
+            note.append("<p> Note: ", data.note.body, "</p>");
+            $("div [data-id='" + id + "'][class='displayNotes']").append(note);
+        })
     }
 });
